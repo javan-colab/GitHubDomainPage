@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تایید دانلود | FreeYtDownloader</title>
+    
+    <!-- Telegram WebApp Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8' },
+                        surface: { 900:'#09090b',800:'#18181b',700:'#27272a',600:'#3f3f46' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #09090b; font-family: Tahoma, system-ui, sans-serif; }
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.06); }
+        .loader {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="text-zinc-300 antialiased flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- بک‌گراند تزئینی مشابه صفحه اصلی -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-600/20 blur-[100px] rounded-full"></div>
+    </div>
+
+    <div class="glass w-full max-w-sm rounded-3xl p-6 shadow-2xl relative z-10 text-center border border-white/10">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mx-auto mb-4 shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+            <i class="fa-brands fa-youtube text-white text-xl"></i>
+        </div>
+        
+        <h2 class="text-white text-xl font-bold mb-1">در حال آماده‌سازی</h2>
+        <p class="text-zinc-400 text-sm mb-6">برای دریافت فایل، لطفاً منتظر بمانید</p>
+
+        <!-- منطقه نمایش تبلیغ (در آینده کد تبلیغ اینجا قرار میگیرد) -->
+        <div class="bg-surface-800/50 border border-white/5 rounded-2xl p-6 mb-6 h-48 flex flex-col items-center justify-center">
+            <span class="text-zinc-500 text-xs mb-4">-- محل نمایش حامی مالی --</span>
+            <div id="loader-icon" class="loader mb-4"></div>
+            <div class="text-2xl font-black text-white" id="countdown">5</div>
+            <p class="text-sm text-zinc-400 mt-2" id="timer-text">ثانیه تا تایید نهایی</p>
+        </div>
+
+        <div id="status-box" class="bg-brand-500/10 border border-brand-500/20 text-brand-400 p-3 rounded-xl text-sm font-medium transition-all duration-300">
+            در حال پردازش درخواست شما...
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoId = urlParams.get('videoId');
+        const quality = urlParams.get('quality');
+
+        const countdownEl = document.getElementById('countdown');
+        const statusBoxEl = document.getElementById('status-box');
+        const timerTextEl = document.getElementById('timer-text');
+        const loaderIcon = document.getElementById('loader-icon');
+
+        let timeLeft = 5;
+
+        // بررسی اینکه آیا از تلگرام باز شده است یا خیر
+        if (!tg.initData) {
+            statusBoxEl.className = "bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-sm font-medium";
+            statusBoxEl.innerHTML = "<i class='fa-solid fa-circle-exclamation ml-1'></i> لطفاً این صفحه را از داخل ربات باز کنید.";
+            countdownEl.style.display = 'none';
+            timerTextEl.style.display = 'none';
+            loaderIcon.style.display = 'none';
+        } else {
+            const timer = setInterval(() => {
+                timeLeft--;
+                countdownEl.innerText = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    countdownEl.style.display = 'none';
+                    timerTextEl.style.display = 'none';
+                    loaderIcon.style.display = 'none';
+                    
+                    statusBoxEl.className = "bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 p-3 rounded-xl text-sm font-medium";
+                    statusBoxEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin ml-1'></i> در حال تایید با سرور...";
+                    verifyAd();
+                }
+            }, 1000);
+        }
+
+        // ==========================================
+        // آدرس NGROK خود را دقیقاً در خط پایین جایگزین کنید
+        // ==========================================
+        const API_BASE_URL = 'https://YOUR_NGROK_URL_HERE.ngrok-free.app';
+
+        async function verifyAd() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/ad-verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify({
+                        initData: tg.initData,
+                        videoId: videoId,
+                        quality: quality
+                    })
+                });
+
+                if (response.ok) {
+                    statusBoxEl.className = "bg-green-500/10 border border-green-500/20 text-green-400 p-3 rounded-xl text-sm font-medium";
+                    statusBoxEl.innerHTML = "<i class='fa-solid fa-check-circle ml-1'></i> تایید شد! در حال ارسال در چت...";
+                    setTimeout(() => tg.close(), 1500);
+                } else {
+                    const errorText = await response.text();
+                    statusBoxEl.className = "bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-sm font-medium";
+                    statusBoxEl.innerHTML = `<i class='fa-solid fa-triangle-exclamation ml-1'></i> خطا: ${errorText}`;
+                }
+            } catch (error) {
+                statusBoxEl.className = "bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-sm font-medium";
+                statusBoxEl.innerHTML = "<i class='fa-solid fa-wifi ml-1'></i> خطای ارتباط با سرور برنامه.";
+            }
+        }
+    </script>
+</body>
+</html>
