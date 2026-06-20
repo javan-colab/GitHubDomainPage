@@ -73,7 +73,8 @@
         const urlParams = new URLSearchParams(window.location.search);
         const videoId = urlParams.get('videoId');
         const quality = urlParams.get('quality');
-
+        const userId = urlParams.get('userId'); 
+        
         const countdownEl = document.getElementById('countdown');
         const statusBoxEl = document.getElementById('status-box');
         const timerTextEl = document.getElementById('timer-text');
@@ -122,7 +123,8 @@
                     body: JSON.stringify({
                         initData: tg.initData,
                         videoId: videoId,
-                        quality: quality
+                        quality: quality,
+                        userId: parseInt(userId) || 0
                     })
                 });
 
